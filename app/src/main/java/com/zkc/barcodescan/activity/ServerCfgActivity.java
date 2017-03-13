@@ -17,6 +17,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import web.RetrofitUtil;
+
 public class ServerCfgActivity extends Activity {
 	private final static int SCANNIN_GREQUEST_CODE = 1;
 
@@ -38,7 +40,7 @@ public class ServerCfgActivity extends Activity {
 			public void onClick(View v) {
 				String ip = ((EditText) findViewById(R.id.ipText)).getText().toString();
 				String port = ((EditText) findViewById(R.id.portText)).getText().toString();
-				save(ip+":"+port);
+				save(ip.trim()+":"+port.trim());
 			}
 		});
 
@@ -56,6 +58,7 @@ public class ServerCfgActivity extends Activity {
 	public void save(String fileContent)
 	{
 
+
 		try {
 			FileOutputStream outStream=ServerCfgActivity.this.openFileOutput("serverCfg.txt", Context.MODE_WORLD_READABLE);
 			outStream.write(fileContent.getBytes());
@@ -66,7 +69,7 @@ public class ServerCfgActivity extends Activity {
 			Toast.makeText(ServerCfgActivity.this,"配置保存失败:"+e.getMessage(), Toast.LENGTH_LONG).show();
 			return;
 		}
-
+		RetrofitUtil.getIns().init(fileContent);;
 
 	}
 
