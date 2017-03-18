@@ -12,22 +12,36 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:gravity="center_horizontal"
-        android:text="名称"
+        android:text="操作时间"
         android:textAppearance="?android:textAppearance" />
 
     <TextView android:id="@+id/text2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="2"
+        android:layout_weight="1"
         android:gravity="center_horizontal"
-        android:text="数量"
+        android:text="仓库"
         android:textAppearance="?android:textAppearance" />
 
     <TextView android:id="@+id/text3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="2"
+        android:layout_weight="1"
         android:gravity="center_horizontal"
-        android:text="价格"
+        android:text="单据号"
+        android:textAppearance="?android:textAppearance" />
+    <TextView android:id="@+id/text4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:text="客户名称"
+        android:textAppearance="?android:textAppearance" />
+    <TextView android:id="@+id/text5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:text="摘要"
         android:textAppearance="?android:textAppearance" />
 </LinearLayout>

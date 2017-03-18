@@ -1,21 +1,15 @@
 package com.zkc.barcodescan.activity;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.Editable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -27,40 +21,34 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RdRecordActivity extends Activity {
+public class QrLog extends Activity {
 
     private ListView mRecordListView;
     private MyAdapter adapter;
-    private ScanBroadcastReceiver scanBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_rd_record);
+        setContentView(R.layout.activity_qr_log);
         getOverflowMenu();
         initList();
         initView();
-        scanBroadcastReceiver = new ScanBroadcastReceiver();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("com.zkc.scancode");
-        this.registerReceiver(scanBroadcastReceiver, intentFilter);
     }
 
     private void initView() {
-        findViewById(R.id.submit_btn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mRecordListView.getVisibility() == View.VISIBLE) {
-                    mRecordListView.setVisibility(View.GONE);
-                } else {
-                    mRecordListView.setVisibility(View.VISIBLE);
-                }
-            }
-        });
+//        findViewById(R.id.submit_btn).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                if (mRecordListView.getVisibility() == View.VISIBLE) {
+//                    mRecordListView.setVisibility(View.GONE);
+//                } else {
+//                    mRecordListView.setVisibility(View.VISIBLE);
+//                }
+//            }
+//        });
 
 
-        ((TextView) findViewById(R.id.biaoTou)).setText("销售出库单|普通销售|公司待修成品仓|XSCK2016010261|陈黎丹|2016-01-06");
-        ((TextView) findViewById(R.id.err_tv)).setText("3000581601511000013,3000581601511000015,3000581601511000017,3000581601511000023,3000581601511000056,3000581601511000078,3000581601511000079,3000581601511000080,3000581601511000081,3000581601511000082,33000581601511000012,33000581601511000013,33000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,");
+
     }
 
     private void initList() {
@@ -72,9 +60,9 @@ public class RdRecordActivity extends Activity {
     }
 
     private class MyAdapter extends BaseAdapter {
-        private List<RdRecord> data;
+        private List<LogItem> data;
 
-        private MyAdapter(List<RdRecord> list) {
+        private MyAdapter(List<LogItem> list) {
             data = list;
         }
 
@@ -98,20 +86,24 @@ public class RdRecordActivity extends Activity {
             Holder holder;
             if (convertView == null) {
                 holder = new Holder();
-                convertView = LayoutInflater.from(RdRecordActivity.this).inflate(R.layout.item_rd_record, null);
+                convertView = LayoutInflater.from(QrLog.this).inflate(R.layout.item_qr_log, null);
                 holder.text1 = (TextView) convertView.findViewById(R.id.text1);
                 holder.text2 = (TextView) convertView.findViewById(R.id.text2);
                 holder.text3 = (TextView) convertView.findViewById(R.id.text3);
+                holder.text4 = (TextView) convertView.findViewById(R.id.text4);
+                holder.text5 = (TextView) convertView.findViewById(R.id.text5);
 
                 convertView.setTag(holder);
             } else {
                 holder = (Holder) convertView.getTag();
             }
 
-            RdRecord rd = data.get(position);
+            LogItem rd = data.get(position);
             holder.text1.setText(rd.getName());
             holder.text2.setText(rd.getAmount());
             holder.text3.setText(rd.getPrice());
+            holder.text4.setText(rd.getS4());
+            holder.text5.setText(rd.getS5());
 
             return convertView;
         }
@@ -120,23 +112,46 @@ public class RdRecordActivity extends Activity {
             TextView text1;
             TextView text2;
             TextView text3;
+            TextView text4;
+            TextView text5;
 
         }
     }
 
-    private class RdRecord {
+    private class LogItem {
         private String name;
         private String amount;
         private String price;
+        private String s4;
 
-        public RdRecord(String name, String amount, String price) {
+        public LogItem(String name, String amount, String price, String s4, String s5) {
             this.name = name;
             this.amount = amount;
             this.price = price;
+            this.s4 = s4;
+            this.s5 = s5;
         }
 
-        public RdRecord() {
+        public String getS4() {
+            return s4;
         }
+
+        public void setS4(String s4) {
+            this.s4 = s4;
+        }
+
+        public String getS5() {
+            return s5;
+        }
+
+        public void setS5(String s5) {
+            this.s5 = s5;
+        }
+
+        public LogItem() {
+        }
+
+        private String s5;
 
         public String getName() {
             return name;
@@ -163,28 +178,10 @@ public class RdRecordActivity extends Activity {
         }
     }
 
-    private List<RdRecord> getData() {
-        List<RdRecord> list = new ArrayList<>();
-        list.add(new RdRecord("DS-J100颈椎按摩披肩", "8", "3"));
-        list.add(new RdRecord("A7L按摩椅（香槟金版）", "2", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "1"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "1"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "2"));
-//        for (int i = 0; i < 10; i++) {
-//            RdRecord rd = new RdRecord();
-//            rd.setAmount("" + i);
-//            rd.setName("sfj" + i);
-//            rd.setPrice("" + i);
-//
-//            list.add(rd);
-//        }
-
+    private List<LogItem> getData() {
+        List<LogItem> list = new ArrayList<>();
+        list.add(new LogItem("2015-11-30 16:27:41", "", "","","根据单品创建二维码"));
+        list.add(new LogItem("2015-11-30 16:27:41", "成品库", "CPRK2015120029","","入库"));
         return list;
     }
 
@@ -196,7 +193,6 @@ public class RdRecordActivity extends Activity {
         return super.onCreateOptionsMenu(menu);
 
     }
-
     private void getOverflowMenu() {
         try {
             ViewConfiguration config = ViewConfiguration.get(this);
@@ -214,28 +210,12 @@ public class RdRecordActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
         if (item.getItemId() == 1) {
-            Intent intent = new Intent();
-            intent.setClass(RdRecordActivity.this, QrLog.class);
-            startActivity(intent);
-        } else if (item.getItemId() == 2) {
 
+        } else if (item.getItemId() == 2) {
+            Intent intent = new Intent();
+            intent.setClass(QrLog.this, RdRecordActivity.class);
+            startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    class ScanBroadcastReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            // TODO Auto-generated method stub
-            String text = intent.getExtras().getString("code");
-            TextView tv = (TextView) findViewById(R.id.err_tv);
-            tv.setText(text+","+tv.getText());
-            EditText editText = (EditText) findViewById(R.id.keyword_et);
-            String s = editText.getText().toString();
-            s = s.replaceAll(text, "").replaceAll("\n", "");
-            editText.setText(s);
-
-
-        }
     }
 }

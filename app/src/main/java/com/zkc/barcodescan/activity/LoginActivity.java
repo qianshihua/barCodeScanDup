@@ -74,14 +74,18 @@ public class LoginActivity extends Activity {
 		findViewById(R.id.cfgBtn).setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-//				Intent intent = new Intent();
-//				intent.setClass(LoginActivity.this, ServerCfgActivity.class);
+				Intent intent = new Intent();
+				intent.setClass(LoginActivity.this, ServerCfgActivity.class);
+				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+				startActivityForResult(intent, 2);
+
+//				Intent intent = new Intent(LoginActivity.this, RdRecordActivity.class);
 //				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 //				startActivityForResult(intent, 2);
 
-				Intent intent = new Intent(LoginActivity.this, RdRecordActivity.class);
-				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-				startActivityForResult(intent, 2);
+//				Intent intent = new Intent(LoginActivity.this, QrLog.class);
+//				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//				startActivityForResult(intent, 2);
 			}
 		});
 

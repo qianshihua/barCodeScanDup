@@ -21,40 +21,15 @@
             android:layout_weight="1" />
 
 
-        <ToggleButton
-            android:id="@+id/toggleButton"
-            android:layout_width="55dp"
-            android:layout_height="wrap_content"
-            android:textOff="新增"
-            android:textOn="删除" />
         <Button
             android:id="@+id/search_btn"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:text="查询"
             android:layout_width="55dp" />
-
-
-        <Button
-            android:id="@+id/submit_btn"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:text="提交"
-            android:layout_width="55dp" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="10dp">
 
-        <TextView
-            android:id="@+id/biaoTou"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:lineSpacingMultiplier="1.2"
-            android:textAppearance="?android:textAppearance" />
-    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -66,23 +41,37 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center_horizontal"
-            android:text="商品名称"
+            android:text="操作时间"
             android:textAppearance="?android:textAppearance" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="2"
+            android:layout_weight="1"
             android:gravity="center_horizontal"
-            android:text="数量"
+            android:text="仓库"
             android:textAppearance="?android:textAppearance" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="2"
+            android:layout_weight="1"
             android:gravity="center_horizontal"
-            android:text="已录入"
+            android:text="单据号"
+            android:textAppearance="?android:textAppearance" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:text="客户名称"
+            android:textAppearance="?android:textAppearance" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:text="摘要"
             android:textAppearance="?android:textAppearance" />
     </LinearLayout>
 
@@ -92,10 +81,5 @@
         android:layout_height="0dp"
         android:layout_weight="1"></ListView>
 
-    <TextView android:id="@+id/err_tv"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:lineSpacingMultiplier="1.2"
-        android:textAppearance="?android:textAppearance"
-        android:text="sjfowejowjofjowfjewo"/>
+
 </LinearLayout>

@@ -8,8 +8,8 @@
         android:minSdkVersion="15"
         android:targetSdkVersion="19" />
 
-    <uses-permission android:name="android.permission.INJECT_EVENT"></uses-permission>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"></uses-permission>
+    <uses-permission android:name="android.permission.INJECT_EVENT" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
@@ -71,18 +71,19 @@
         <activity
             android:name=".activity.ActivityBarcodeSetting"
             android:label="@string/app_name"
-            android:screenOrientation="locked"></activity>
+            android:screenOrientation="locked" />
         <activity
             android:name=".activity.ActivityQrcodeSetting"
             android:label="@string/app_name"
-            android:screenOrientation="locked"></activity>
+            android:screenOrientation="locked" />
         <activity
             android:name=".activity.DialogEncodingActivity"
             android:label="@string/app_name"
-            android:screenOrientation="locked"></activity>
+            android:screenOrientation="locked" />
         <activity android:name=".activity.MainActivity" />
         <activity android:name=".activity.ServerCfgActivity" />
-        <activity android:name=".activity.RdRecordActivity"></activity>
+        <activity android:name=".activity.RdRecordActivity" />
+        <activity android:name=".activity.QrLog"></activity>
     </application>
 
 </manifest>
