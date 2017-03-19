@@ -212,9 +212,10 @@ public class QrLog extends Activity {
         if (item.getItemId() == 1) {
 
         } else if (item.getItemId() == 2) {
-            Intent intent = new Intent();
-            intent.setClass(QrLog.this, RdRecordActivity.class);
-            startActivity(intent);
+            this.finish();
+//            Intent intent = new Intent();
+//            intent.setClass(QrLog.this, RdRecordActivity.class);
+//            startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
     }

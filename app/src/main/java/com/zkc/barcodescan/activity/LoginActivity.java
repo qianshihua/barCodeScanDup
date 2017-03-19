@@ -56,7 +56,7 @@ public class LoginActivity extends Activity {
 							return;
 						}else{
 							Intent intent = new Intent();
-							intent.setClass(LoginActivity.this, MainActivity.class);
+							intent.setClass(LoginActivity.this, RdRecordActivity.class);
 							intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 							startActivityForResult(intent, 3);
 						}

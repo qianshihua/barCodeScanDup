@@ -5,10 +5,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
@@ -18,6 +21,7 @@ import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.zkc.barcodescan.R;
 
@@ -27,12 +31,19 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+import web.RetrofitUtil;
+
 public class RdRecordActivity extends Activity {
 
     private ListView mRecordListView;
     private MyAdapter adapter;
     private ScanBroadcastReceiver scanBroadcastReceiver;
 
+    public void showToast(String content){
+        Toast toast=Toast.makeText(getApplicationContext(), content, Toast.LENGTH_SHORT);
+        toast.setGravity(Gravity.TOP|Gravity.CENTER, 0, 80);
+        toast.show();
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +61,27 @@ public class RdRecordActivity extends Activity {
         findViewById(R.id.submit_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Handler handler = new Handler() {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        super.handleMessage(msg);
+                        Bundle data = msg.getData();
+                        String errMsg = data.getString("msg");
+                        // UI界面的更新等相关操作
+                        if(errMsg!=null && errMsg.length()>0){
+                            showToast(errMsg);
+                            return;
+                        }else{
+//                            Intent intent = new Intent();
+//                            intent.setClass(LoginActivity.this, RdRecordActivity.class);
+//                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//                            startActivityForResult(intent, 3);
+                        }
+                    }
+                };
+                String ccode = ((EditText) findViewById(R.id.keyword_et)).getText().toString();
+                RetrofitUtil.getIns().queryRecordeByCcode(ccode,handler);
+                if(true) return;
                 if (mRecordListView.getVisibility() == View.VISIBLE) {
                     mRecordListView.setVisibility(View.GONE);
                 } else {

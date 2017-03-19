@@ -1,16 +1,21 @@
 package web;
-
+import java.text.DateFormat;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.zxing.common.StringUtils;
 
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import eclipse.Rdrecord;
+import eclipse.Rdrecords;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -52,7 +57,15 @@ public class RetrofitUtil {
                 .build();
 
         RetrofitUtil ins = getIns();
-        ins.retrofit = new Retrofit.Builder().baseUrl(url).client(client).addConverterFactory(GsonConverterFactory.create()).build();
+
+        GsonBuilder gb=new GsonBuilder();
+
+        gb.registerTypeAdapter(java.util.Date.class , new  UtilDateSerializer()).setDateFormat(DateFormat.LONG);
+        gb.registerTypeAdapter(java.util.Date.class , new  UtilDateDeserializer()).setDateFormat(DateFormat.LONG);
+        Gson gson=gb.create();
+
+//        Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+        ins.retrofit = new Retrofit.Builder().baseUrl(url).client(client).addConverterFactory(GsonConverterFactory.create(gson)).build();
         ins.service = ins.retrofit.create(MainService.class);
 
     }
@@ -118,24 +131,22 @@ public class RetrofitUtil {
         return "";
     }
 
-    public void queryQRInWh(){
+    public void queryRecordeByCcode(String ccode, final Handler handler){
         check();
         RetrofitUtil ins = getIns();
-        Call<ResponseBody> call = ins.service.queryQRInWh();
-        call.enqueue(new Callback<ResponseBody>() {
+        Call<CommonRespTwo<Rdrecord, Rdrecords>> call = ins.service.queryRecord(ccode);
+        call.enqueue(new Callback<CommonRespTwo<Rdrecord, Rdrecords>>() {
             @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                try {
-                    String s = response.body().string();
-                    System.out.println(s);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            public void onResponse(Call<CommonRespTwo<Rdrecord, Rdrecords>> call, Response<CommonRespTwo<Rdrecord, Rdrecords>> response) {
+                List<Rdrecord> data = response.body().getData();
+                List<Rdrecords> dataTwo = response.body().getDataTwo();
+                System.out.println(data);
             }
 
             @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
+            public void onFailure(Call<CommonRespTwo<Rdrecord, Rdrecords>> call, Throwable t) {
                 t.printStackTrace();
+                System.out.println(t);
             }
         });
     }
