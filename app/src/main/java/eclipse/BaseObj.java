@@ -7,6 +7,8 @@ import java.util.Date;
 
 public class BaseObj {
 
+	private Double hasInput=0d;//已经输入的二维码数量
+
 	private String str1;//已用
 	private String str2;//已用
 	private String str3;//已用
@@ -272,5 +274,13 @@ public class BaseObj {
 	}
 	public void setDdateStr(String ddateStr) {
 		this.ddateStr = ddateStr;
+	}
+
+	public Double getHasInput() {
+		return hasInput;
+	}
+
+	public void setHasInput(Double hasInput) {
+		this.hasInput = hasInput;
 	}
 }

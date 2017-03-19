@@ -1,23 +1,22 @@
 package web;
 import java.text.DateFormat;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.zxing.common.StringUtils;
 
-import org.json.JSONObject;
+import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import eclipse.Rdrecord;
 import eclipse.Rdrecords;
+import eclipse.Transvouch;
 import okhttp3.OkHttpClient;
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -131,23 +130,72 @@ public class RetrofitUtil {
         return "";
     }
 
+    /**
+     * 根据调拨单或者出入库单编号查询对象
+     * @param ccode
+     * @param handler
+     */
     public void queryRecordeByCcode(String ccode, final Handler handler){
         check();
         RetrofitUtil ins = getIns();
-        Call<CommonRespTwo<Rdrecord, Rdrecords>> call = ins.service.queryRecord(ccode);
-        call.enqueue(new Callback<CommonRespTwo<Rdrecord, Rdrecords>>() {
+        Call<CommonRespThree<Rdrecord, Rdrecords,Transvouch>> call = ins.service.queryRecord(ccode);
+        call.enqueue(new Callback<CommonRespThree<Rdrecord, Rdrecords, Transvouch>>() {
             @Override
-            public void onResponse(Call<CommonRespTwo<Rdrecord, Rdrecords>> call, Response<CommonRespTwo<Rdrecord, Rdrecords>> response) {
-                List<Rdrecord> data = response.body().getData();
-                List<Rdrecords> dataTwo = response.body().getDataTwo();
-                System.out.println(data);
+            public void onResponse(Call<CommonRespThree<Rdrecord, Rdrecords,Transvouch>> call, Response<CommonRespThree<Rdrecord, Rdrecords,Transvouch>> response) {
+                CommonRespThree<Rdrecord, Rdrecords,Transvouch> body = response.body();
+                List<Rdrecord> data = body.getData();
+                List<Rdrecords> dataTwo = body.getDataTwo();
+                String errMsg ="";
+                if(StringUtils.isNoneBlank(body.getErrMsg())){
+                    errMsg=body.getErrMsg();
+                }
+                Message message = buildMsg(errMsg);
+                message.obj=body;
+                handler.sendMessage(message);
+
             }
 
             @Override
-            public void onFailure(Call<CommonRespTwo<Rdrecord, Rdrecords>> call, Throwable t) {
+            public void onFailure(Call<CommonRespThree<Rdrecord, Rdrecords,Transvouch>> call, Throwable t) {
                 t.printStackTrace();
-                System.out.println(t);
+                handler.sendMessage(buildMsg(t.getMessage()) );
             }
         });
     }
+
+
+    /**
+     * 验证扫描枪读取的二维码
+     * @param rdIdOrCtvcode
+     * @param qr
+     * @param handler
+     */
+    public void checkQrSingle(String rdIdOrCtvcode, String qr, final Handler handler){
+        check();
+        RetrofitUtil ins = getIns();
+        Call<CommonRespOne<Object>> call = ins.service.checkQrSingle(rdIdOrCtvcode, qr);
+        call.enqueue(new Callback<CommonRespOne<Object>>() {
+            @Override
+            public void onResponse(Call<CommonRespOne<Object>> call, Response<CommonRespOne<Object>> response) {
+                CommonRespOne<Object> body = response.body();
+
+                String errMsg ="";
+                if(StringUtils.isNoneBlank(body.getErrMsg())){
+                    errMsg=body.getErrMsg();
+                }
+                Message message = buildMsg(errMsg);
+                message.obj=body;
+                handler.sendMessage(message);
+            }
+
+            @Override
+            public void onFailure(Call<CommonRespOne<Object>> call, Throwable t) {
+                t.printStackTrace();
+                handler.sendMessage(buildMsg(t.getMessage()) );
+            }
+        });
+
+
+    }
+
 }

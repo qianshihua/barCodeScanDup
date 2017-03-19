@@ -7,10 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.Editable;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -22,15 +19,21 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.zkc.barcodescan.R;
 
-import org.w3c.dom.Text;
+import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+import eclipse.Rdrecord;
+import eclipse.Rdrecords;
+import eclipse.Transvouch;
+import web.CommonRespOne;
+import web.CommonRespThree;
 import web.RetrofitUtil;
 
 public class RdRecordActivity extends Activity {
@@ -38,6 +41,14 @@ public class RdRecordActivity extends Activity {
     private ListView mRecordListView;
     private MyAdapter adapter;
     private ScanBroadcastReceiver scanBroadcastReceiver;
+
+    /**
+     * 调拨单的ctvcode或者出入库但的rdid
+     */
+    private String rdIdOrCtvcode;
+
+
+
 
     public void showToast(String content){
         Toast toast=Toast.makeText(getApplicationContext(), content, Toast.LENGTH_SHORT);
@@ -51,20 +62,57 @@ public class RdRecordActivity extends Activity {
         getOverflowMenu();
         initList();
         initView();
-        scanBroadcastReceiver = new ScanBroadcastReceiver();
+        scanBroadcastReceiver = new ScanBroadcastReceiver(this);
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("com.zkc.scancode");
         this.registerReceiver(scanBroadcastReceiver, intentFilter);
     }
 
     private void initView() {
-        findViewById(R.id.submit_btn).setOnClickListener(new View.OnClickListener() {
+//        findViewById(R.id.submit_btn).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Handler handler = new Handler() {
+//                    @Override
+//                    public void handleMessage(Message msg) {
+//                        super.handleMessage(msg);
+//                        Bundle data = msg.getData();
+//                        String errMsg = data.getString("msg");
+//                        // UI界面的更新等相关操作
+//                        if(errMsg!=null && errMsg.length()>0){
+//                            showToast(errMsg);
+//                            return;
+//                        }else{
+////                            Intent intent = new Intent();
+////                            intent.setClass(LoginActivity.this, RdRecordActivity.class);
+////                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+////                            startActivityForResult(intent, 3);
+//                        }
+//                    }
+//                };
+//                String ccode = ((EditText) findViewById(R.id.keyword_et)).getText().toString();
+//                RetrofitUtil.getIns().queryRecordeByCcode(ccode,handler);
+//                if(true) return;
+//                if (mRecordListView.getVisibility() == View.VISIBLE) {
+//                    mRecordListView.setVisibility(View.GONE);
+//                } else {
+//                    mRecordListView.setVisibility(View.VISIBLE);
+//                }
+//            }
+//        });
+
+        /**
+         * 点击查询按钮的事件
+         */
+        findViewById(R.id.search_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Handler handler = new Handler() {
                     @Override
                     public void handleMessage(Message msg) {
                         super.handleMessage(msg);
+                        CommonRespThree<Rdrecord, Rdrecords,Transvouch> respThree = (CommonRespThree<Rdrecord, Rdrecords, Transvouch>) msg.obj;
+
                         Bundle data = msg.getData();
                         String errMsg = data.getString("msg");
                         // UI界面的更新等相关操作
@@ -72,6 +120,28 @@ public class RdRecordActivity extends Activity {
                             showToast(errMsg);
                             return;
                         }else{
+                            if(respThree!=null && respThree.getData()!=null&& respThree.getData().size()>0){
+                                //出入库订单
+                                Rdrecord rd = respThree.getData().get(0);
+
+                                List<Rdrecords> rds = respThree.getDataTwo();
+                                //单据类型，业务类型，单据来源，单据日期，正负单，制单人
+                                String record = rd.getCvouchTypeName()+"|"+rd.getCbustype()+"|"+rd.getCsource()+"|"+rd.getDdateStr()+"|"+rd.getOrderType()+"|"+rd.getCmaker();
+                                ((TextView) findViewById(R.id.biaoTou)).setText(record);
+                                adapter.loadAll(respThree.getDataTwo());
+                                rdIdOrCtvcode = rd.getId()+"";
+                                scanBroadcastReceiver.setRdIdOrCtvcode(rdIdOrCtvcode);//将订单号存到广播对象，扫描枪扫了之后需要知道是否已经进行过查询
+                            }
+                            if(respThree!=null && respThree.getDataThree()!=null){
+                                //调拨单的情况
+                                Transvouch tv = respThree.getDataThree().get(0);
+                                String record = tv.getDdateStr()+"|"+tv.getOutWhName()+"->"+tv.getInWhName()+"|"+tv.getCmaker()+"|"+tv.getCverifyperson()+"|"+tv.getCtvmemo();
+                                ((TextView) findViewById(R.id.biaoTou)).setText(record);
+                                adapter.loadAll(respThree.getDataTwo());
+                                rdIdOrCtvcode=tv.getCtvcode();
+                                scanBroadcastReceiver.setRdIdOrCtvcode(rdIdOrCtvcode);//将订单号存到广播对象，扫描枪扫了之后需要知道是否已经进行过查询
+                            }
+
 //                            Intent intent = new Intent();
 //                            intent.setClass(LoginActivity.this, RdRecordActivity.class);
 //                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -81,32 +151,64 @@ public class RdRecordActivity extends Activity {
                 };
                 String ccode = ((EditText) findViewById(R.id.keyword_et)).getText().toString();
                 RetrofitUtil.getIns().queryRecordeByCcode(ccode,handler);
-                if(true) return;
-                if (mRecordListView.getVisibility() == View.VISIBLE) {
-                    mRecordListView.setVisibility(View.GONE);
-                } else {
-                    mRecordListView.setVisibility(View.VISIBLE);
-                }
             }
         });
 
 
-        ((TextView) findViewById(R.id.biaoTou)).setText("销售出库单|普通销售|公司待修成品仓|XSCK2016010261|陈黎丹|2016-01-06");
-        ((TextView) findViewById(R.id.err_tv)).setText("3000581601511000013,3000581601511000015,3000581601511000017,3000581601511000023,3000581601511000056,3000581601511000078,3000581601511000079,3000581601511000080,3000581601511000081,3000581601511000082,33000581601511000012,33000581601511000013,33000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,");
+//        ((TextView) findViewById(R.id.biaoTou)).setText("");
+//        ((TextView) findViewById(R.id.err_tv)).setText("3000581601511000013,3000581601511000015,3000581601511000017,3000581601511000023,3000581601511000056,3000581601511000078,3000581601511000079,3000581601511000080,3000581601511000081,3000581601511000082,33000581601511000012,33000581601511000013,33000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,");
     }
 
     private void initList() {
         mRecordListView = (ListView) findViewById(R.id.listview);
-        adapter = new MyAdapter(getData());
+        List<Rdrecords> data = new ArrayList<>();
+        adapter = new MyAdapter(data);
+
         mRecordListView.setAdapter(adapter);
 
 //        adapter.notifyDataSetChanged();
     }
 
-    private class MyAdapter extends BaseAdapter {
-        private List<RdRecord> data;
+    /**
+     * 扫完一个二维码，更新列表输入中已经输入的数量。
+     * @param cinvcode 商品编码
+     * @param inOrOut 1或者-1
+     */
+    public void changeOne(String cinvcode,int inOrOut){
+        if(this.adapter!=null){
+            adapter.changeOne(cinvcode,inOrOut);
+        }
+    }
 
-        private MyAdapter(List<RdRecord> list) {
+
+
+    private class MyAdapter extends BaseAdapter {
+        private List<Rdrecords> data;
+
+
+        public void loadAll(List<Rdrecords> list){
+            data = list;
+            this.notifyDataSetChanged();
+        }
+
+        /**
+         * 扫完一个二维码，更新列表输入中已经输入的数量。
+         * @param cinvcode 商品编码
+         * @param inOrOut 1或者-1
+         */
+        public void changeOne(String cinvcode,int inOrOut){
+            if(data==null){
+                return;
+            }
+            for (Rdrecords rds:data){
+                if(StringUtils.equals(rds.getCinvcode(),cinvcode)){
+                    rds.setHasInput(rds.getHasInput()+inOrOut);
+                    this.notifyDataSetChanged();
+                }
+            }
+        }
+
+        private MyAdapter(List<Rdrecords> list) {
             data = list;
         }
 
@@ -140,10 +242,10 @@ public class RdRecordActivity extends Activity {
                 holder = (Holder) convertView.getTag();
             }
 
-            RdRecord rd = data.get(position);
-            holder.text1.setText(rd.getName());
-            holder.text2.setText(rd.getAmount());
-            holder.text3.setText(rd.getPrice());
+            Rdrecords rd = data.get(position);
+            holder.text1.setText(rd.getInvName());
+            holder.text2.setText(rd.getIquantity()+"");
+            holder.text3.setText(rd.getHasInput()+"");
 
             return convertView;
         }
@@ -156,69 +258,7 @@ public class RdRecordActivity extends Activity {
         }
     }
 
-    private class RdRecord {
-        private String name;
-        private String amount;
-        private String price;
 
-        public RdRecord(String name, String amount, String price) {
-            this.name = name;
-            this.amount = amount;
-            this.price = price;
-        }
-
-        public RdRecord() {
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getAmount() {
-            return amount;
-        }
-
-        public void setAmount(String amount) {
-            this.amount = amount;
-        }
-
-        public String getPrice() {
-            return price;
-        }
-
-        public void setPrice(String price) {
-            this.price = price;
-        }
-    }
-
-    private List<RdRecord> getData() {
-        List<RdRecord> list = new ArrayList<>();
-        list.add(new RdRecord("DS-J100颈椎按摩披肩", "8", "3"));
-        list.add(new RdRecord("A7L按摩椅（香槟金版）", "2", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "1"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "1"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "0"));
-        list.add(new RdRecord("A7L按摩椅（纪念版）", "3", "2"));
-//        for (int i = 0; i < 10; i++) {
-//            RdRecord rd = new RdRecord();
-//            rd.setAmount("" + i);
-//            rd.setName("sfj" + i);
-//            rd.setPrice("" + i);
-//
-//            list.add(rd);
-//        }
-
-        return list;
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -255,19 +295,91 @@ public class RdRecordActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * 接受到扫描枪扫到的数据之后的处理
+     */
     class ScanBroadcastReceiver extends BroadcastReceiver {
+
+
+
+
+        /**
+
+         * 调拨单的ctvcode或者出入库但的rdid
+         */
+        private String rdIdOrCtvcode;
+
+        private RdRecordActivity rdAct;
+
+        public ScanBroadcastReceiver(RdRecordActivity rdAct) {
+            this.rdAct = rdAct;
+        }
+
+        public ScanBroadcastReceiver() {
+        }
         @Override
         public void onReceive(Context context, Intent intent) {
             // TODO Auto-generated method stub
-            String text = intent.getExtras().getString("code");
-            TextView tv = (TextView) findViewById(R.id.err_tv);
-            tv.setText(text+","+tv.getText());
+            final String text = intent.getExtras().getString("code");
+            //扫描之后，会吧内容自动写入查询的条件文本框，这里需要手工删除一下
             EditText editText = (EditText) findViewById(R.id.keyword_et);
             String s = editText.getText().toString();
             s = s.replaceAll(text, "").replaceAll("\n", "");
             editText.setText(s);
+            //判断是否已查询到订单
+            if(StringUtils.isBlank(rdIdOrCtvcode)){
+                showToast("请先查询订单，在执行扫码操作。");
+                return;
+            }
+
+            //判断下是否是删除模式，是的话，直接删除已经扫入的二维码
+
+            ToggleButton tb = (ToggleButton) findViewById(R.id.toggleButton);
+            String tbVal = tb.getText().toString();
+            if(StringUtils.equals(tbVal,"删除")){
+                //删除已经扫描的二维码
+                TextView tv = (TextView) findViewById(R.id.err_tv);
+                tv.setText(tv.getText().toString().replaceAll(text+",",""));
+            }else{
+                //新增，需要调用接口进行验证，然后填充回去
+                Handler handler = new Handler() {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        super.handleMessage(msg);
+                        CommonRespOne<Object> respThree = (CommonRespOne<Object>) msg.obj;
+                        Bundle data = msg.getData();
+                        String errMsg = data.getString("msg");
+                        // UI界面的更新等相关操作
+                        if(errMsg!=null && errMsg.length()>0){
+                            showToast(errMsg);
+                            return;
+                        }else{
+                            //没有出错，需要更新二维码到已扫描列表，还有listview视图
+                            TextView tv = (TextView) findViewById(R.id.err_tv);
+                            tv.setText(text+","+tv.getText());
+                        }
+                    }
+                };
+
+                RetrofitUtil.getIns().checkQrSingle(rdIdOrCtvcode,text,handler);
+            }
 
 
+
+        }
+
+        public void showToast(String content){
+            Toast toast=Toast.makeText(getApplicationContext(), content, Toast.LENGTH_SHORT);
+            toast.setGravity(Gravity.TOP|Gravity.CENTER, 0, 80);
+            toast.show();
+        }
+
+        public String getRdIdOrCtvcode() {
+            return rdIdOrCtvcode;
+        }
+
+        public void setRdIdOrCtvcode(String rdIdOrCtvcode) {
+            this.rdIdOrCtvcode = rdIdOrCtvcode;
         }
     }
 }

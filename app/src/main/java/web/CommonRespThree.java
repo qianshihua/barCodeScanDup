@@ -6,11 +6,14 @@ import java.util.List;
  * Created by qiansh on 2017/3/18.
  */
 
-public class CommonRespTwo<T,S> {
+public class CommonRespThree<T,S,P> {
 
     private Integer count;
-    private List<T> data;
-    private List<S> dataTwo;
+    private List<T> data;//rdrecord
+    private List<S> dataTwo;//rdrecords。可能出入库、可能调拨单明细。对象相同
+
+
+    private List<P> dataThree;//Transvouch调拨单对象
     private String errMsg;
 
     public String getErrMsg() {
@@ -45,4 +48,11 @@ public class CommonRespTwo<T,S> {
         this.data = data;
     }
 
+    public List<P> getDataThree() {
+        return dataThree;
+    }
+
+    public void setDataThree(List<P> dataThree) {
+        this.dataThree = dataThree;
+    }
 }

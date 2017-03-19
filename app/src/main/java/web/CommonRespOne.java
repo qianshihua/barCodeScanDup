@@ -11,6 +11,10 @@ public class CommonRespOne<T> {
     private Integer count;
     private List<T> data;
     private String errMsg;
+    /**
+     * 目前用来传二维码单个验证之后，返回的单品编码
+     */
+    private String cinvcode;
 
     public String getErrMsg() {
         return errMsg;
@@ -37,4 +41,11 @@ public class CommonRespOne<T> {
         this.data = data;
     }
 
+    public String getCinvcode() {
+        return cinvcode;
+    }
+
+    public void setCinvcode(String cinvcode) {
+        this.cinvcode = cinvcode;
+    }
 }
