@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import eclipse.QrRecordLog;
 import eclipse.Rdrecord;
 import eclipse.Rdrecords;
 import eclipse.Transvouch;
@@ -190,6 +191,54 @@ public class RetrofitUtil {
 
             @Override
             public void onFailure(Call<CommonRespOne<Object>> call, Throwable t) {
+                t.printStackTrace();
+                handler.sendMessage(buildMsg(t.getMessage()) );
+            }
+        });
+
+
+    }
+
+
+    public void outOrIn(String recordid, String qrs, final Handler handler){
+        check();
+        RetrofitUtil ins = getIns();
+        Call<CommonRespOne<Object>> call = ins.service.outOrIn(recordid, qrs);
+        call.enqueue(new Callback<CommonRespOne<Object>>() {
+            @Override
+            public void onResponse(Call<CommonRespOne<Object>> call, Response<CommonRespOne<Object>> response) {
+                CommonRespOne<Object> body = response.body();
+
+                Message message = buildMsg(body.getMsg());
+                message.obj=body;
+                handler.sendMessage(message);
+            }
+
+            @Override
+            public void onFailure(Call<CommonRespOne<Object>> call, Throwable t) {
+                t.printStackTrace();
+                handler.sendMessage(buildMsg(t.getMessage()) );
+            }
+        });
+
+
+    }
+
+    public void queryLog(String qrcode, final Handler handler){
+        check();
+        RetrofitUtil ins = getIns();
+        Call<CommonRespOne<QrRecordLog>> call = ins.service.queryLog(qrcode);
+        call.enqueue(new Callback<CommonRespOne<QrRecordLog>>() {
+            @Override
+            public void onResponse(Call<CommonRespOne<QrRecordLog>> call, Response<CommonRespOne<QrRecordLog>> response) {
+                CommonRespOne<QrRecordLog> body = response.body();
+                Message message = buildMsg(body.getErrMsg());
+                message.obj=body;
+                handler.sendMessage(message);
+            }
+
+            @Override
+            public void onFailure(Call<CommonRespOne<QrRecordLog>> call, Throwable t) {
                 t.printStackTrace();
                 handler.sendMessage(buildMsg(t.getMessage()) );
             }

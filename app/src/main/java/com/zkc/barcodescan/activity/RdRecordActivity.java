@@ -155,6 +155,45 @@ public class RdRecordActivity extends Activity {
         });
 
 
+        /**
+         * 点击提交按钮的事件
+         */
+        findViewById(R.id.submit_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //判断是否已查询到订单
+                if(StringUtils.isBlank(rdIdOrCtvcode)){
+                    showToast("请先查询订单，再执行提交操作。");
+                    return;
+                }
+
+                Handler handler = new Handler() {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        super.handleMessage(msg);
+
+                        Bundle data = msg.getData();
+                        String errMsg = data.getString("msg");
+                        // UI界面的更新等相关操作
+                        if(!"操作成功".equals(errMsg)){
+                            //有错误返回信息
+                            showToast(errMsg);
+                            return;
+                        }else{
+                            showToast(errMsg);
+                            final TextView tv = (TextView) findViewById(R.id.err_tv);
+                            tv.setText("");
+                            ((TextView) findViewById(R.id.biaoTou)).setText("");
+                        }
+                    }
+                };
+                final TextView tv = (TextView) findViewById(R.id.err_tv);
+                RetrofitUtil.getIns().outOrIn(rdIdOrCtvcode,tv.getText().toString(),handler);
+            }
+        });
+
+
 //        ((TextView) findViewById(R.id.biaoTou)).setText("");
 //        ((TextView) findViewById(R.id.err_tv)).setText("3000581601511000013,3000581601511000015,3000581601511000017,3000581601511000023,3000581601511000056,3000581601511000078,3000581601511000079,3000581601511000080,3000581601511000081,3000581601511000082,33000581601511000012,33000581601511000013,33000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,");
     }
@@ -173,10 +212,18 @@ public class RdRecordActivity extends Activity {
      * 扫完一个二维码，更新列表输入中已经输入的数量。
      * @param cinvcode 商品编码
      * @param inOrOut 1或者-1
+     * @param qrCode 扫入的二维码，没有逗号
      */
-    public void changeOne(String cinvcode,int inOrOut){
+    public void changeOne(String cinvcode, int inOrOut, String qrCode){
         if(this.adapter!=null){
-            adapter.changeOne(cinvcode,inOrOut);
+            adapter.changeOne(cinvcode,inOrOut, qrCode);
+        }
+    }
+
+    public void clear(){
+        if(this.adapter!=null){
+            adapter.loadAll(new ArrayList<Rdrecords>());
+
         }
     }
 
@@ -191,17 +238,32 @@ public class RdRecordActivity extends Activity {
             this.notifyDataSetChanged();
         }
 
+
         /**
          * 扫完一个二维码，更新列表输入中已经输入的数量。
          * @param cinvcode 商品编码
          * @param inOrOut 1或者-1
+         * @param qrCode 没有逗号的二维码
          */
-        public void changeOne(String cinvcode,int inOrOut){
+        public void changeOne(String cinvcode, int inOrOut, String qrCode){
             if(data==null){
                 return;
             }
             for (Rdrecords rds:data){
                 if(StringUtils.equals(rds.getCinvcode(),cinvcode)){
+                    if(inOrOut>0){
+                        //新增的分支
+                        if(rds.getInputQrs()==null){
+                            rds.setInputQrs("");
+                        }
+                        rds.setQrs(rds.getInputQrs()+qrCode+",");
+                    }else{
+                        //删除的分支
+                        if(rds.getInputQrs()==null){
+                            rds.setInputQrs("");
+                        }
+                        rds.setInputQrs(rds.getQrs().replaceAll(qrCode+",",""));
+                    }
                     rds.setHasInput(rds.getHasInput()+inOrOut);
                     this.notifyDataSetChanged();
                 }
@@ -341,27 +403,32 @@ public class RdRecordActivity extends Activity {
                 TextView tv = (TextView) findViewById(R.id.err_tv);
                 tv.setText(tv.getText().toString().replaceAll(text+",",""));
             }else{
-                //新增，需要调用接口进行验证，然后填充回去
-                Handler handler = new Handler() {
-                    @Override
-                    public void handleMessage(Message msg) {
-                        super.handleMessage(msg);
-                        CommonRespOne<Object> respThree = (CommonRespOne<Object>) msg.obj;
-                        Bundle data = msg.getData();
-                        String errMsg = data.getString("msg");
-                        // UI界面的更新等相关操作
-                        if(errMsg!=null && errMsg.length()>0){
-                            showToast(errMsg);
-                            return;
-                        }else{
-                            //没有出错，需要更新二维码到已扫描列表，还有listview视图
-                            TextView tv = (TextView) findViewById(R.id.err_tv);
-                            tv.setText(text+","+tv.getText());
+                //新增，先判断是否已经扫描，是的话直接跳过。不是的话需要调用接口进行验证，然后填充回去
+                final TextView tv = (TextView) findViewById(R.id.err_tv);
+                if(tv.getText().toString().indexOf(text+",")>-1){
+                    return;
+                }else{
+                    Handler handler = new Handler() {
+                        @Override
+                        public void handleMessage(Message msg) {
+                            super.handleMessage(msg);
+                            CommonRespOne<Object> respThree = (CommonRespOne<Object>) msg.obj;
+                            Bundle data = msg.getData();
+                            String errMsg = data.getString("msg");
+                            // UI界面的更新等相关操作
+                            if(errMsg!=null && errMsg.length()>0){
+                                showToast(errMsg);
+                                return;
+                            }else{
+                                //没有出错，需要更新二维码到已扫描列表，还有listview视图
+                                tv.setText(text+","+tv.getText());
+                                rdAct.changeOne(respThree.getCinvcode(),1, text);
+                            }
                         }
-                    }
-                };
+                    };
+                    RetrofitUtil.getIns().checkQrSingle(rdIdOrCtvcode,text,handler);
+                }
 
-                RetrofitUtil.getIns().checkQrSingle(rdIdOrCtvcode,text,handler);
             }
 
 

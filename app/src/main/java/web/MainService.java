@@ -1,10 +1,12 @@
 package web;
 
+import eclipse.QrRecordLog;
 import eclipse.Rdrecord;
 import eclipse.Rdrecords;
 import eclipse.Transvouch;
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 /**
@@ -21,5 +23,12 @@ public interface MainService {
     @GET("/qr/all/rest/checkQrSingle.do")
     Call<CommonRespOne<Object>> checkQrSingle(@Query("rdIdOrCtvcode") String rdIdOrCtvcode,@Query("qr") String qr);
 
+
+    @GET("/qr/all/rest/outIn.do")
+    Call<CommonRespOne<Object>> outOrIn(@Query("recordid") String recordid,@Query("qrs") String qrs);
+
+
+    @GET("/qr/all/rest/queryLog.do")
+    Call<CommonRespOne<QrRecordLog>> queryLog(@Query("qrcode") String qrcode);
 
 }

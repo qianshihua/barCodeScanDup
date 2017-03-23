@@ -7,7 +7,8 @@ import java.util.Date;
 
 public class BaseObj {
 
-	private Double hasInput=0d;//已经输入的二维码数量
+	private Double hasInput=0d;//已经输入的二维码数量20170323
+	private String inputQrs = "";//已经输入的二维码列表20170323
 
 	private String str1;//已用
 	private String str2;//已用
@@ -282,5 +283,13 @@ public class BaseObj {
 
 	public void setHasInput(Double hasInput) {
 		this.hasInput = hasInput;
+	}
+
+	public String getInputQrs() {
+		return inputQrs;
+	}
+
+	public void setInputQrs(String inputQrs) {
+		this.inputQrs = inputQrs;
 	}
 }
