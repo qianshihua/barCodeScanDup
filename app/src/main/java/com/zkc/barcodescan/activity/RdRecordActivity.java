@@ -1,6 +1,7 @@
 package com.zkc.barcodescan.activity;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +16,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -51,7 +53,8 @@ public class RdRecordActivity extends Activity {
 
 
     public void showToast(String content){
-        Toast toast=Toast.makeText(getApplicationContext(), content, Toast.LENGTH_SHORT);
+        content=content.replaceAll("<br>","\n");
+        Toast toast=Toast.makeText(getApplicationContext(), content, Toast.LENGTH_LONG);
         toast.setGravity(Gravity.TOP|Gravity.CENTER, 0, 80);
         toast.show();
     }
@@ -149,6 +152,10 @@ public class RdRecordActivity extends Activity {
                         }
                     }
                 };
+                final TextView tv = (TextView) findViewById(R.id.err_tv);
+                tv.setText("");
+                final TextView bt = (TextView) findViewById(R.id.biaoTou);
+                bt.setText("");
                 String ccode = ((EditText) findViewById(R.id.keyword_et)).getText().toString();
                 RetrofitUtil.getIns().queryRecordeByCcode(ccode,handler);
             }
@@ -241,7 +248,7 @@ public class RdRecordActivity extends Activity {
 
         /**
          * 扫完一个二维码，更新列表输入中已经输入的数量。
-         * @param cinvcode 商品编码
+         * @param cinvcode 商品编码.删除的时候传null
          * @param inOrOut 1或者-1
          * @param qrCode 没有逗号的二维码
          */
@@ -250,22 +257,29 @@ public class RdRecordActivity extends Activity {
                 return;
             }
             for (Rdrecords rds:data){
-                if(StringUtils.equals(rds.getCinvcode(),cinvcode)){
-                    if(inOrOut>0){
-                        //新增的分支
-                        if(rds.getInputQrs()==null){
-                            rds.setInputQrs("");
-                        }
-                        rds.setQrs(rds.getInputQrs()+qrCode+",");
-                    }else{
-                        //删除的分支
-                        if(rds.getInputQrs()==null){
-                            rds.setInputQrs("");
-                        }
-                        rds.setInputQrs(rds.getQrs().replaceAll(qrCode+",",""));
+                if(inOrOut<0){
+                    //删除的时候，单品编码为null
+                    if(rds.getInputQrs()==null){
+                        rds.setInputQrs("");
                     }
-                    rds.setHasInput(rds.getHasInput()+inOrOut);
-                    this.notifyDataSetChanged();
+                    if(rds.getInputQrs().indexOf(qrCode)>-1){
+                        rds.setInputQrs(rds.getQrs().replaceAll(qrCode+",",""));
+                        rds.setHasInput(rds.getHasInput()+inOrOut);
+                        this.notifyDataSetChanged();
+                    }
+                }else{
+                    //新增的分支
+                    if(StringUtils.equals(rds.getCinvcode(),cinvcode)){
+                        if(inOrOut>0){
+                            //新增的分支
+                            if(rds.getInputQrs()==null){
+                                rds.setInputQrs("");
+                            }
+                            rds.setInputQrs(rds.getInputQrs()+qrCode+",");
+                        }
+                        rds.setHasInput(rds.getHasInput()+inOrOut);
+                        this.notifyDataSetChanged();
+                    }
                 }
             }
         }
@@ -351,6 +365,7 @@ public class RdRecordActivity extends Activity {
             Intent intent = new Intent();
             intent.setClass(RdRecordActivity.this, QrLog.class);
             startActivity(intent);
+
         } else if (item.getItemId() == 2) {
 
         }
@@ -363,7 +378,15 @@ public class RdRecordActivity extends Activity {
     class ScanBroadcastReceiver extends BroadcastReceiver {
 
 
-
+        /**
+         * 获取当前激活的activ
+         * @return
+         */
+        private String getRunningActivityName(){
+            ActivityManager activityManager=(ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+            String runningActivity=activityManager.getRunningTasks(1).get(0).topActivity.getClassName();
+            return runningActivity;
+        }
 
         /**
 
@@ -383,6 +406,14 @@ public class RdRecordActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
             // TODO Auto-generated method stub
             final String text = intent.getExtras().getString("code");
+
+            String runningActivityName = getRunningActivityName();
+            if(runningActivityName.indexOf("Log")>-1){
+                //轨迹查询
+                return;
+            }
+
+
             //扫描之后，会吧内容自动写入查询的条件文本框，这里需要手工删除一下
             EditText editText = (EditText) findViewById(R.id.keyword_et);
             String s = editText.getText().toString();
@@ -401,7 +432,15 @@ public class RdRecordActivity extends Activity {
             if(StringUtils.equals(tbVal,"删除")){
                 //删除已经扫描的二维码
                 TextView tv = (TextView) findViewById(R.id.err_tv);
-                tv.setText(tv.getText().toString().replaceAll(text+",",""));
+                if(tv.getText().toString().indexOf(text+",")<0){
+                    return;
+                }else{
+                    tv.setText(tv.getText().toString().replaceAll(text+",",""));
+                    rdAct.changeOne(null,-1, text);
+                }
+
+
+
             }else{
                 //新增，先判断是否已经扫描，是的话直接跳过。不是的话需要调用接口进行验证，然后填充回去
                 final TextView tv = (TextView) findViewById(R.id.err_tv);

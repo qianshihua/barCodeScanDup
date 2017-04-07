@@ -2,29 +2,49 @@ package com.zkc.barcodescan.activity;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.zkc.barcodescan.R;
 
+import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Text;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+import eclipse.QrRecordLog;
+import eclipse.Rdrecords;
+import web.CommonRespOne;
+import web.RetrofitUtil;
+
 public class QrLog extends Activity {
 
     private ListView mRecordListView;
     private MyAdapter adapter;
+
+
+    public void showToast(String content){
+        Toast toast=Toast.makeText(getApplicationContext(), content, Toast.LENGTH_SHORT);
+        toast.setGravity(Gravity.TOP|Gravity.CENTER, 0, 80);
+        toast.show();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,34 +56,89 @@ public class QrLog extends Activity {
     }
 
     private void initView() {
-//        findViewById(R.id.submit_btn).setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                if (mRecordListView.getVisibility() == View.VISIBLE) {
-//                    mRecordListView.setVisibility(View.GONE);
-//                } else {
-//                    mRecordListView.setVisibility(View.VISIBLE);
-//                }
-//            }
-//        });
+        /**
+         * 点击搜索按钮的事件
+         */
+        findViewById(R.id.search_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
 
+                Handler handler = new Handler() {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        super.handleMessage(msg);
 
+                        CommonRespOne<QrRecordLog> qrl = (CommonRespOne<QrRecordLog>) msg.obj;
+                        Bundle data = msg.getData();
+                        String errMsg = data.getString("msg");
+                        // UI界面的更新等相关操作
+                        if(errMsg==null || "".equals(errMsg)){
+                            //有数据返回
+                            adapter.loadAll(qrl.getData());
+                        }else{
+                            //有错误返回信息
+                            showToast(errMsg);
+                        }
+                    }
+                };
+//                EditText editText = (EditText) findViewById(R.id.keyword_log);
+//                String s = editText.getText().toString().replaceAll("\n", "");
+//                editText.setText(s);
+                String qrcode = ((EditText) findViewById(R.id.keyword_log)).getText().toString();
+                qrcode = qrcode.replaceAll("\n","");
+                RetrofitUtil.getIns().queryLog(qrcode,handler);
+            }
+        });
+
+        EditText et = (EditText) findViewById(R.id.keyword_log);
+        et.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                String ss = s.toString();
+                if(ss.indexOf("\n")>-1){
+                    EditText ett = (EditText) findViewById(R.id.keyword_log);
+                    ss = ss.replaceAll("\n","");
+                    if(ss.length()>20){
+                        ss = ss.substring(0,20);
+                    }
+                    ett.setText(ss);
+                }
+            }
+        });
 
     }
 
     private void initList() {
         mRecordListView = (ListView) findViewById(R.id.listview);
-        adapter = new MyAdapter(getData());
+        adapter = new MyAdapter(new ArrayList<QrRecordLog>());
         mRecordListView.setAdapter(adapter);
 
 //        adapter.notifyDataSetChanged();
     }
 
     private class MyAdapter extends BaseAdapter {
-        private List<LogItem> data;
+        private List<QrRecordLog> data;
 
-        private MyAdapter(List<LogItem> list) {
+        private MyAdapter(List<QrRecordLog> list) {
             data = list;
+        }
+
+        public void loadAll(List<QrRecordLog> list){
+            if(list==null){
+                list = new ArrayList<>();
+            }
+            data = list;
+            this.notifyDataSetChanged();
         }
 
         @Override
@@ -98,12 +173,12 @@ public class QrLog extends Activity {
                 holder = (Holder) convertView.getTag();
             }
 
-            LogItem rd = data.get(position);
-            holder.text1.setText(rd.getName());
-            holder.text2.setText(rd.getAmount());
-            holder.text3.setText(rd.getPrice());
-            holder.text4.setText(rd.getS4());
-            holder.text5.setText(rd.getS5());
+            QrRecordLog rd = data.get(position);
+            holder.text1.setText(rd.getOptTimeStr());
+            holder.text2.setText(rd.getStr4());
+            holder.text3.setText(rd.getString6());
+            holder.text4.setText(rd.getCusNameLog());
+            holder.text5.setText(rd.getZhaiYao());
 
             return convertView;
         }
@@ -118,72 +193,7 @@ public class QrLog extends Activity {
         }
     }
 
-    private class LogItem {
-        private String name;
-        private String amount;
-        private String price;
-        private String s4;
 
-        public LogItem(String name, String amount, String price, String s4, String s5) {
-            this.name = name;
-            this.amount = amount;
-            this.price = price;
-            this.s4 = s4;
-            this.s5 = s5;
-        }
-
-        public String getS4() {
-            return s4;
-        }
-
-        public void setS4(String s4) {
-            this.s4 = s4;
-        }
-
-        public String getS5() {
-            return s5;
-        }
-
-        public void setS5(String s5) {
-            this.s5 = s5;
-        }
-
-        public LogItem() {
-        }
-
-        private String s5;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getAmount() {
-            return amount;
-        }
-
-        public void setAmount(String amount) {
-            this.amount = amount;
-        }
-
-        public String getPrice() {
-            return price;
-        }
-
-        public void setPrice(String price) {
-            this.price = price;
-        }
-    }
-
-    private List<LogItem> getData() {
-        List<LogItem> list = new ArrayList<>();
-        list.add(new LogItem("2015-11-30 16:27:41", "", "","","根据单品创建二维码"));
-        list.add(new LogItem("2015-11-30 16:27:41", "成品库", "CPRK2015120029","","入库"));
-        return list;
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -219,4 +229,6 @@ public class QrLog extends Activity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+
 }
