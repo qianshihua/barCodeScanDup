@@ -2,8 +2,10 @@ package com.zkc.barcodescan.activity;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
@@ -27,6 +29,11 @@ import com.zkc.barcodescan.R;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -118,8 +125,15 @@ public class RdRecordActivity extends Activity {
 
                         Bundle data = msg.getData();
                         String errMsg = data.getString("msg");
+                        //不管成功还是失败之后，清除输入的内容
+                        final TextView tvv = (TextView) findViewById(R.id.err_tv);
+                        tvv.setText("");
+                        final TextView bt = (TextView) findViewById(R.id.biaoTou);
+                        bt.setText("");
+                        adapter.loadAll(new ArrayList<Rdrecords>());
                         // UI界面的更新等相关操作
                         if(errMsg!=null && errMsg.length()>0){
+                            //提交失败之后，删除文件
                             showToast(errMsg);
                             return;
                         }else{
@@ -145,18 +159,46 @@ public class RdRecordActivity extends Activity {
                                 scanBroadcastReceiver.setRdIdOrCtvcode(rdIdOrCtvcode);//将订单号存到广播对象，扫描枪扫了之后需要知道是否已经进行过查询
                             }
 
+                            if(rdIdOrCtvcode!=null && checkFile(rdIdOrCtvcode)){
+                                //查询到这个订单在本地有缓存数据,需要提示用户是否加载
+                                new AlertDialog.Builder(RdRecordActivity.this).setTitle("系统提示")//设置对话框标题
+
+                                        .setMessage("检测到存在提交失败的缓存数据，是否加载！")//设置显示的内容
+
+                                        .setPositiveButton("加载",new DialogInterface.OnClickListener() {//添加确定按钮
+
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {//确定按钮的响应事件
+                                                if(checkFile(rdIdOrCtvcode)){
+                                                    fillData(rdIdOrCtvcode);
+                                                }
+                                            }
+
+                                        }).setNegativeButton("取消",new DialogInterface.OnClickListener() {//添加返回按钮
+
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {//响应事件
+
+                                    }
+
+                                }).show();//在按键响应事件中显示此对话框
+
+                            }
+
 //                            Intent intent = new Intent();
 //                            intent.setClass(LoginActivity.this, RdRecordActivity.class);
 //                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 //                            startActivityForResult(intent, 3);
                         }
+
                     }
                 };
-                final TextView tv = (TextView) findViewById(R.id.err_tv);
-                tv.setText("");
-                final TextView bt = (TextView) findViewById(R.id.biaoTou);
-                bt.setText("");
+
                 String ccode = ((EditText) findViewById(R.id.keyword_et)).getText().toString();
+                if(ccode==null || ccode.trim().equals("")){
+                    showToast("订单编号不能为空");
+                    return;
+                }
                 RetrofitUtil.getIns().queryRecordeByCcode(ccode,handler);
             }
         });
@@ -186,12 +228,22 @@ public class RdRecordActivity extends Activity {
                         if(!"操作成功".equals(errMsg)){
                             //有错误返回信息
                             showToast(errMsg);
+                            if(rdIdOrCtvcode!=null){
+                                //将界面中的内容先缓存起来
+                                saveContent(rdIdOrCtvcode);
+                            }
                             return;
                         }else{
+                            //提交成功
                             showToast(errMsg);
                             final TextView tv = (TextView) findViewById(R.id.err_tv);
                             tv.setText("");
                             ((TextView) findViewById(R.id.biaoTou)).setText("");
+                            ((TextView) findViewById(R.id.keyword_et)).setText("");
+                            adapter.loadAll(new ArrayList<Rdrecords>());
+
+                            //提交成功之后，删除缓存文件
+                            delFile(rdIdOrCtvcode);
                         }
                     }
                 };
@@ -203,6 +255,113 @@ public class RdRecordActivity extends Activity {
 
 //        ((TextView) findViewById(R.id.biaoTou)).setText("");
 //        ((TextView) findViewById(R.id.err_tv)).setText("3000581601511000013,3000581601511000015,3000581601511000017,3000581601511000023,3000581601511000056,3000581601511000078,3000581601511000079,3000581601511000080,3000581601511000081,3000581601511000082,33000581601511000012,33000581601511000013,33000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,3000581601511000013,");
+    }
+
+
+    /**
+     * 保存内容到文件中
+     * @param rdcode
+     */
+    public void saveContent(String rdcode)
+    {
+        try {
+            String fileContent="";
+            //先保存已输入的单品二维码的总数
+            if(adapter!=null && adapter.getData()!=null){
+                for (Rdrecords rds:adapter.getData()){
+                    fileContent+=rds.getCinvcode()+"-"+rds.getHasInput()+";";
+                }
+            }
+            fileContent=fileContent+"\n";
+            //然后保存二维码列表
+            final TextView tv = (TextView) findViewById(R.id.err_tv);
+            fileContent=fileContent+tv.getText().toString();
+
+            FileOutputStream outStream=RdRecordActivity.this.openFileOutput(rdcode+".txt", Context.MODE_WORLD_READABLE);
+            outStream.write(fileContent.getBytes());
+            outStream.close();
+        } catch (Exception e) {
+            Toast.makeText(RdRecordActivity.this,"保存临时扫描文件失败:"+e.getMessage(), Toast.LENGTH_LONG).show();
+            return;
+        }
+
+    }
+    public void delFile(String rdcode){
+        try{
+            this.deleteFile(rdcode+".txt");
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * 判断是否存在订单编码对应的缓存文件
+     * @param rdcode
+     * @return
+     */
+    public boolean checkFile(String rdcode){
+        try {
+            FileInputStream inStream=this.openFileInput(rdcode+".txt");
+        } catch (FileNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public void fillData(String rdcode){
+        String s = loadContent(rdcode);
+        String[] split = s.split("\n");
+        if(split.length!=2){
+            this.showToast("缓存格式不正确，本次没有进行加载");
+            return;
+        }
+        String[] invAndHasInputs = split[0].split(";");
+        for (int i=0;i<invAndHasInputs.length;i++){
+            String anvNHasInput = invAndHasInputs[i];
+            if("".equals(anvNHasInput)){
+                continue;
+            }
+            String[] invCodeInputArr = anvNHasInput.split("-");
+            if(this.adapter!=null && adapter.getData()!=null){
+                for(Rdrecords rds:adapter.getData()){
+                    if(rds.getCinvcode().equals(invCodeInputArr[0])){
+                        rds.setHasInput(Double.parseDouble(invCodeInputArr[1]));
+                    }
+                }
+            }
+        }
+        this.adapter.notifyDataSetChanged();
+        String qrs = split[1];
+        final TextView tv = (TextView) findViewById(R.id.err_tv);
+        tv.setText(qrs);
+    }
+
+    /**
+     * 读取文件内容
+     * @return
+     */
+    public String loadContent(String rdcode)
+    {
+        String rm ="";
+        try {
+            FileInputStream inStream=this.openFileInput(rdcode+".txt");
+            ByteArrayOutputStream stream=new ByteArrayOutputStream();
+            byte[] buffer=new byte[1024];
+            int length=-1;
+            while((length=inStream.read(buffer))!=-1)   {
+                stream.write(buffer,0,length);
+            }
+            stream.close();
+            inStream.close();
+            rm=stream.toString();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return rm;
+
     }
 
     private void initList() {
@@ -238,6 +397,10 @@ public class RdRecordActivity extends Activity {
 
     private class MyAdapter extends BaseAdapter {
         private List<Rdrecords> data;
+
+        public List<Rdrecords> getData(){
+            return data;
+        }
 
 
         public void loadAll(List<Rdrecords> list){
