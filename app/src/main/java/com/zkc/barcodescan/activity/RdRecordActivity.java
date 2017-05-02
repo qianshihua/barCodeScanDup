@@ -426,9 +426,11 @@ public class RdRecordActivity extends Activity {
                         rds.setInputQrs("");
                     }
                     if(rds.getInputQrs().indexOf(qrCode)>-1){
-                        rds.setInputQrs(rds.getQrs().replaceAll(qrCode+",",""));
-                        rds.setHasInput(rds.getHasInput()+inOrOut);
-                        this.notifyDataSetChanged();
+                        final String inputQrs = rds.getInputQrs();
+                        String newInputQrs = inputQrs.replaceAll(qrCode + ",", "");
+                        rds.setInputQrs(newInputQrs);
+//                        rds.setHasInput(rds.getHasInput()+inOrOut);
+//                        this.notifyDataSetChanged();
                     }
                 }else{
                     //新增的分支
@@ -440,11 +442,23 @@ public class RdRecordActivity extends Activity {
                             }
                             rds.setInputQrs(rds.getInputQrs()+qrCode+",");
                         }
-                        rds.setHasInput(rds.getHasInput()+inOrOut);
-                        this.notifyDataSetChanged();
+//                        rds.setHasInput(rds.getHasInput()+inOrOut);
+//                        this.notifyDataSetChanged();
                     }
                 }
             }
+            for (Rdrecords rds:data){
+                String inputQrs = rds.getInputQrs();
+                int length = inputQrs.split(",").length;
+                if(length<0){
+                    length=0;
+                }
+                if(length==1 && inputQrs.split(",")[0].equals("")){
+                    length=0;
+                }
+                rds.setHasInput((double)length);
+            }
+            this.notifyDataSetChanged();
         }
 
         private MyAdapter(List<Rdrecords> list) {
@@ -623,8 +637,12 @@ public class RdRecordActivity extends Activity {
                                 return;
                             }else{
                                 //没有出错，需要更新二维码到已扫描列表，还有listview视图
-                                tv.setText(text+","+tv.getText());
-                                rdAct.changeOne(respThree.getCinvcode(),1, text);
+                                if(tv.getText().toString().indexOf(text)>-1){
+
+                                }else{
+                                    tv.setText(text+","+tv.getText());
+                                    rdAct.changeOne(respThree.getCinvcode(),1, text);
+                                }
                             }
                         }
                     };
