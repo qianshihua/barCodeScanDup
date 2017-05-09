@@ -634,6 +634,13 @@ public class RdRecordActivity extends Activity {
                             // UI界面的更新等相关操作
                             if(errMsg!=null && errMsg.length()>0){
                                 showToast(errMsg);
+//                                for(int i=0;i<2000;i++){
+//                                    String fadeQr="9999999999999999";
+//                                    String s1 = StringUtils.leftPad(i + "", 4, "0");
+//                                    s1=fadeQr+s1;
+//                                    tv.setText(s1+","+tv.getText());
+//                                    rdAct.changeOne(respThree.getCinvcode(),1, s1);
+//                                }
                                 return;
                             }else{
                                 //没有出错，需要更新二维码到已扫描列表，还有listview视图

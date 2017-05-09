@@ -5,6 +5,8 @@ import eclipse.Rdrecord;
 import eclipse.Rdrecords;
 import eclipse.Transvouch;
 import retrofit2.Call;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
@@ -23,9 +25,9 @@ public interface MainService {
     @GET("/qr/all/rest/checkQrSingle.do")
     Call<CommonRespOne<Object>> checkQrSingle(@Query("rdIdOrCtvcode") String rdIdOrCtvcode,@Query("qr") String qr);
 
-
-    @GET("/qr/all/rest/outIn.do")
-    Call<CommonRespOne<Object>> outOrIn(@Query("recordid") String recordid,@Query("qrs") String qrs);
+    @FormUrlEncoded
+    @POST("/qr/all/rest/outIn.do")
+    Call<CommonRespOne<Object>> outOrIn(@Field("recordid") String recordid, @Field("qrs") String qrs);
 
 
     @GET("/qr/all/rest/queryLog.do")
